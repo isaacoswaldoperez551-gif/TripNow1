@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trip Now — Arrendamiento de Vehículos</title>
+<meta name="description" content="Arrienda camionetas, sedanes y motocicletas en El Salvador. Reserva, personaliza tu experiencia y muévete cuando tú decidas." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<header class="navbar">
+  <div class="wrap">
+    <a href="index.html" class="logo">trip now</a>
+    <nav class="nav-links">
+      <a href="index.html" data-i18n="nav_inicio">Inicio</a>
+      <a href="catalogo.html" data-i18n="nav_catalogo">Catálogo</a>
+      <a href="sucursales.html" data-i18n="nav_sucursales">Sucursales</a>
+      <a href="index.html#mis-reservas" data-i18n="nav_reservas">Mis reservas</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="carrito.html" class="cart-link">
+        <span data-i18n="cart_link">Carrito</span>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </a>
+      <button class="lang-btn" id="langBtn">ES</button>
+      <span id="navAccount"></span>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="speed-lines"></div>
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow" data-i18n="hero_eyebrow">Arrendamiento de vehículos</p>
+      <h1><span data-i18n="hero_title_1">Muévete cuando</span><br /><em data-i18n="hero_title_em">tú decidas.</em></h1>
+      <p class="lead" data-i18n="hero_lead">
+        Camionetas, sedanes, motocicletas e híbridos, listos para retirar en
+        cualquiera de nuestras sucursales en El Salvador. Reserva en minutos,
+        paga por día y cancela con reglas claras.
+      </p>
+
+      <div class="hero-cta">
+        <a href="catalogo.html" class="btn btn-primary" data-i18n="cta_catalog">Ver catálogo</a>
+        <a href="sucursales.html" class="btn btn-outline" data-i18n="cta_branches">Ver sucursales</a>
+      </div>
+
+      <div class="personalize">
+        <form class="card" id="personalizeForm">
+          <div id="formStep">
+            <p data-i18n="personalize_intro">Cuéntanos un poco de ti para personalizar tu experiencia.</p>
+            <div class="form-grid">
+              <input required id="pfNombre" placeholder="Nombre completo" data-i18n-placeholder="ph_name" />
+              <input required type="email" id="pfEmail" placeholder="Correo electrónico" data-i18n-placeholder="ph_email" />
+              <input id="pfTelefono" class="span-2" placeholder="Teléfono" data-i18n-placeholder="ph_phone" />
+            </div>
+            <button type="submit" class="btn btn-gold" data-i18n="btn_start">Comenzar</button>
+          </div>
+          <div id="confirmStep" class="confirm-msg" style="display:none;">
+            <p class="display" id="confirmGreeting">Gracias.</p>
+            <p data-i18n="confirm_desc">Ya personalizamos tu experiencia. Explora el catálogo para ver los vehículos disponibles cerca de ti.</p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="hero-svg-wrap">
+      <img src="images/logo.png" alt="Trip Now — Arrendamiento de vehículos" style="width:100%;max-width:420px;height:auto;display:block;margin:0 auto;" />
+    </div>
+  </div>
+</section>
+
+<section class="value-props">
+  <div class="wrap value-grid">
+    <div class="value-item">
+      <h3 data-i18n="vp1_title">Reserva en minutos</h3>
+      <p data-i18n="vp1_desc">Elige tu vehículo, define los días de uso y confirma sin filas ni papeleo.</p>
+    </div>
+    <div class="value-item">
+      <h3 data-i18n="vp2_title">Precio transparente</h3>
+      <p data-i18n="vp2_desc">El total se calcula al momento según los días exactos que necesites.</p>
+    </div>
+    <div class="value-item">
+      <h3 data-i18n="vp3_title">Sucursales en todo el país</h3>
+      <p data-i18n="vp3_desc">Retira y devuelve en la ubicación que más te convenga.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="mis-reservas" style="padding:56px 24px 80px;">
+  <div class="catalog-header" style="padding:0 0 24px;">
+    <h1 data-i18n="myres_title">Mis reservas</h1>
+    <p id="resSubtitle" data-i18n="myres_loading">Cargando…</p>
+  </div>
+  <div id="reservationsList"></div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">
+    <span class="logo">trip now</span>
+    <p class="muted" data-i18n="footer_tagline">Arrendamiento de vehículos · El Salvador</p>
+    <small>© <span id="year"></span> Trip Now. <span data-i18n="footer_rights">Todos los derechos reservados.</span></small>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Reflejar cantidad de items del carrito guardados en localStorage
+  (function updateCartBadge() {
+    const badge = document.getElementById('cartBadge');
+    try {
+      const cart = JSON.parse(localStorage.getItem('tripnow_cart')) || [];
+      badge.textContent = cart.length;
+      badge.style.display = cart.length > 0 ? 'inline-flex' : 'none';
+    } catch {
+      badge.style.display = 'none';
+    }
+  })();
+
+  // Formulario de personalización (persistido en localStorage para esta demo;
+  // en producción esto se envía al backend con el usuario autenticado)
+  const PROFILE_KEY = 'tripnow_profile';
+  const form = document.getElementById('personalizeForm');
+  const branches = getBranches();
+
+  function renderGreeting() {
+    const saved = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+    if (!saved) return;
+    document.getElementById('formStep').style.display = 'none';
+    document.getElementById('confirmStep').style.display = 'block';
+    document.getElementById('confirmGreeting').textContent =
+      t('greeting_again') + ' ' + (saved.nombre.split(' ')[0] || 'viajero') + '.';
+    registerClient(saved); // asegura que exista en la lista de clientes del admin
+    if (typeof renderAuthNav === 'function') renderAuthNav(); // sincroniza el nombre/salir en el nav
+  }
+
+  renderGreeting();
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const profile = {
+      nombre: document.getElementById('pfNombre').value.trim(),
+      email: document.getElementById('pfEmail').value.trim(),
+      telefono: document.getElementById('pfTelefono').value.trim(),
+    };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+
+    // Registra al cliente de verdad: aparecerá en admin.html → Clientes
+    registerClient(profile);
+    if (typeof renderAuthNav === 'function') renderAuthNav();
+
+    document.getElementById('formStep').style.display = 'none';
+    document.getElementById('confirmStep').style.display = 'block';
+    document.getElementById('confirmGreeting').textContent =
+      t('greeting_thanks') + ' ' + (profile.nombre.split(' ')[0] || 'viajero') + '.';
+  });
+
+  /* ---------- Mis reservas (ver / modificar / cancelar) ---------- */
+  let openEditId = null;
+
+  function statusLabel(status) {
+    return t('myres_status_' + status);
+  }
+
+  function statusTagClass(status) {
+    if (status === 'finalizado') return 'tag-ok';
+    if (status === 'cancelado') return 'tag-paused';
+    return 'tag-progress';
+  }
+
+  function branchOptions(selectedId) {
+    return branches
+      .map((b) => `<option value="${b.id}" ${b.id === selectedId ? 'selected' : ''}>${b.name}</option>`)
+      .join('');
+  }
+
+  function reservationCardHTML(r) {
+    const canManage = r.status === 'en_curso';
+    const isOpen = openEditId === r.id;
+    const today = new Date().toISOString().slice(0, 10);
+
+    return `
+      <div class="res-card">
+        <div class="res-card-top">
+          <div><h3>${r.vehicleName}</h3></div>
+          <span class="tag ${statusTagClass(r.status)}">${statusLabel(r.status)}</span>
+        </div>
+
+        <dl class="res-specs">
+          <div><dt>${t('label_pickup_branch')}</dt><dd>${r.branchName}</dd></div>
+          <div><dt>${t('label_pickup_date')}</dt><dd>${r.pickupDate}</dd></div>
+          <div><dt>${t('label_return_date')}</dt><dd>${r.returnDate}</dd></div>
+          <div><dt>${t('myres_field_days')}</dt><dd>${r.days}</dd></div>
+          <div><dt>${t('summary_total')}</dt><dd>$${r.total}</dd></div>
+          ${r.extraFees ? `<div><dt>${t('myres_fee_paid_label')}</dt><dd>$${r.extraFees}</dd></div>` : ''}
+        </dl>
+
+        ${
+          canManage
+            ? `
+        <div class="res-actions">
+          <button type="button" class="btn btn-outline btn-small" onclick="toggleEdit('${r.id}')">${t('myres_modify_btn')}</button>
+          <button type="button" class="btn btn-outline btn-small" onclick="cancelReservation('${r.id}')">${t('myres_cancel_btn')}</button>
+        </div>
+        <div class="res-edit-form ${isOpen ? 'open' : ''}" id="editForm-${r.id}">
+          <p class="res-fee-notice">${t('myres_fee_notice')}</p>
+          <div class="res-edit-grid">
+            <label>
+              <span>${t('label_pickup_date')}</span>
+              <input type="date" id="editDate-${r.id}" value="${r.pickupDate}" min="${today}" />
+            </label>
+            <label>
+              <span>${t('label_pickup_branch')}</span>
+              <select id="editBranch-${r.id}">${branchOptions(r.branchId)}</select>
+            </label>
+            <label>
+              <span>${t('myres_field_days')}</span>
+              <input type="number" min="1" id="editDays-${r.id}" value="${r.days}" />
+            </label>
+          </div>
+          <div class="res-actions">
+            <button type="button" class="btn btn-gold btn-small" onclick="saveEdit('${r.id}')">${t('myres_save_btn')}</button>
+            <button type="button" class="btn btn-outline btn-small" onclick="toggleEdit('${r.id}')">${t('myres_cancel_edit_btn')}</button>
+          </div>
+        </div>
+        `
+            : ''
+        }
+      </div>
+    `;
+  }
+
+  function toggleEdit(id) {
+    openEditId = openEditId === id ? null : id;
+    renderReservations();
+  }
+
+  function saveEdit(id) {
+    const pickupDate = document.getElementById('editDate-' + id).value;
+    const branchId = document.getElementById('editBranch-' + id).value;
+    const days = document.getElementById('editDays-' + id).value;
+
+    if (!pickupDate || !branchId || !days || Number(days) < 1) {
+      alert(t('alert_missing_schedule'));
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (pickupDate < today) {
+      alert(t('alert_date_past'));
+      return;
+    }
+
+    const result = modifyReservation(id, { pickupDate, branchId, days });
+    if (!result) return;
+
+    openEditId = null;
+    renderReservations();
+    alert(t('myres_alert_success_1') + result.fee + t('myres_alert_success_2') + result.newTotal);
+  }
+
+  function cancelReservation(id) {
+    if (!confirm(t('myres_cancel_confirm'))) return;
+    const result = cancelReservationByClient(id);
+    if (!result) return;
+
+    openEditId = null;
+    renderReservations();
+    alert(t('myres_cancel_alert_1') + result.fee + t('myres_cancel_alert_2'));
+  }
+
+  function renderReservations() {
+    const listEl = document.getElementById('reservationsList');
+    const subtitle = document.getElementById('resSubtitle');
+    const session = typeof getSession === 'function' ? getSession() : null;
+
+    if (!session || !session.email) {
+      subtitle.textContent = '';
+      listEl.innerHTML = `
+        <p class="empty-state">
+          ${t('myres_login_required')}
+          <br /><br />
+          <button type="button" class="btn btn-primary btn-small" id="myresLoginBtn">${t('myres_login_btn')}</button>
+        </p>
+      `;
+      document.getElementById('myresLoginBtn').addEventListener('click', openLoginModal);
+      return;
+    }
+
+    const mine = getReservations()
+      .filter((r) => (r.clientEmail || '').trim().toLowerCase() === session.email.trim().toLowerCase())
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    if (mine.length === 0) {
+      subtitle.textContent = '';
+      listEl.innerHTML = `<p class="empty-state">${t('myres_empty')}</p>`;
+      return;
+    }
+
+    subtitle.textContent = mine.length + ' ' + (mine.length === 1 ? t('myres_subtitle_one') : t('myres_subtitle_many'));
+    listEl.innerHTML = mine.map(reservationCardHTML).join('');
+  }
+
+  // Al cambiar de idioma, el saludo (si ya está registrado) debe re-traducirse
+  window.onLangChange = function () {
+    renderGreeting();
+    renderReservations();
+  };
+
+  // Si el usuario cierra sesión (o inicia sesión de nuevo) desde el modal
+  // del nav, este formulario debe reflejarlo: vuelve a pedir datos si salió,
+  // o muestra el saludo si entró con una cuenta ya guardada. También hay
+  // que refrescar la sección "Mis reservas".
+  window.onSessionChange = function (profile) {
+    if (profile) {
+      renderGreeting();
+    } else {
+      form.reset();
+      document.getElementById('formStep').style.display = 'block';
+      document.getElementById('confirmStep').style.display = 'none';
+    }
+    renderReservations();
+  };
+
+  initLangToggle();
+  renderReservations();
+</script>
+
+</body>
+</html>

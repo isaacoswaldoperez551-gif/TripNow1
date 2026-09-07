@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Carrito — Trip Now</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<header class="navbar">
+  <div class="wrap">
+    <a href="index.html" class="logo">trip now</a>
+    <nav class="nav-links">
+      <a href="index.html" data-i18n="nav_inicio">Inicio</a>
+      <a href="catalogo.html" data-i18n="nav_catalogo">Catálogo</a>
+      <a href="sucursales.html" data-i18n="nav_sucursales">Sucursales</a>
+      <a href="index.html#mis-reservas" data-i18n="nav_reservas">Mis reservas</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="carrito.html" class="cart-link">
+        <span data-i18n="cart_link">Carrito</span>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </a>
+      <button class="lang-btn" id="langBtn">ES</button>
+      <span id="navAccount"></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap catalog-header">
+  <h1 data-i18n="cart_title">Tu carrito</h1>
+  <p id="cartSubtitle" data-i18n="cart_loading">Cargando…</p>
+</div>
+
+<div class="wrap cart-layout">
+  <div id="cartItems"></div>
+
+  <div class="cart-summary">
+    <div class="row">
+      <span data-i18n="summary_vehicles">Vehículos</span>
+      <span id="summaryCount">0</span>
+    </div>
+    <div class="row total">
+      <span data-i18n="summary_total">Total</span>
+      <span id="summaryTotal">$0</span>
+    </div>
+
+    <div class="schedule-fields" style="margin:16px 0;display:flex;flex-direction:column;gap:10px;">
+      <label style="display:block;">
+        <span style="display:block;font-size:0.8rem;margin-bottom:4px;" data-i18n="label_pickup_date">Fecha de recogida</span>
+        <input type="date" id="pickupDate" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(14,27,48,0.2);" />
+      </label>
+      <label style="display:block;">
+        <span style="display:block;font-size:0.8rem;margin-bottom:4px;" data-i18n="label_pickup_branch">Sucursal de entrega</span>
+        <select id="pickupBranch" required style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(14,27,48,0.2);"></select>
+      </label>
+    </div>
+
+    <button class="btn btn-gold" id="confirmBtn" onclick="confirmPurchase()" data-i18n="btn_confirm_purchase">
+      Confirmar compra
+    </button>
+    <p style="font-size:0.75rem;color:rgba(14,27,48,0.5);margin-top:12px;" data-i18n="cart_note">
+      Confirma la fecha y la sucursal para reservar tus vehículos.
+    </p>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="wrap">
+    <span class="logo">trip now</span>
+    <p class="muted" data-i18n="footer_tagline">Arrendamiento de vehículos · El Salvador</p>
+    <small>© <span id="year"></span> Trip Now. <span data-i18n="footer_rights">Todos los derechos reservados.</span></small>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  const CART_KEY = 'tripnow_cart';
+  const PROFILE_KEY = 'tripnow_profile';
+
+  // Mismo catálogo que usa catalogo.html (compartido vía js/data.js),
+  // para poder mostrar nombre/precio/imagen de cada item del carrito
+  const vehicles = getVehicles();
+  const branches = getBranches();
+
+  function setupScheduleFields() {
+    const dateInput = document.getElementById('pickupDate');
+    const today = new Date().toISOString().slice(0, 10);
+    dateInput.min = today;
+    if (!dateInput.value) dateInput.value = today;
+
+    // Conserva la sucursal ya elegida si el carrito se vuelve a renderizar
+    const branchSelect = document.getElementById('pickupBranch');
+    const previousValue = branchSelect.value;
+    branchSelect.innerHTML =
+      `<option value="" data-i18n="opt_select_branch">${t('opt_select_branch')}</option>` +
+      branches.map((b) => `<option value="${b.id}">${b.name}</option>`).join('');
+    if (previousValue) branchSelect.value = previousValue;
+  }
+
+  function getCart() {
+    try {
+      return JSON.parse(localStorage.getItem(CART_KEY)) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveCart(cart) {
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  }
+
+  function placeholderFor(v) {
+    return `https://placehold.co/200x150/0E1B30/F6F4EE?font=roboto&text=${encodeURIComponent(v.brand + ' ' + v.name)}`;
+  }
+
+  function removeItem(vehicleId) {
+    const cart = getCart().filter((i) => i.vehicleId !== vehicleId);
+    saveCart(cart);
+    render();
+  }
+
+  function changeItemDays(vehicleId, delta) {
+    const cart = getCart();
+    const item = cart.find((i) => i.vehicleId === vehicleId);
+    if (item) item.days = Math.max(1, item.days + delta);
+    saveCart(cart);
+    render();
+  }
+
+  function render() {
+    const cart = getCart();
+    const container = document.getElementById('cartItems');
+    const subtitle = document.getElementById('cartSubtitle');
+    const badge = document.getElementById('cartBadge');
+
+    badge.textContent = cart.length;
+    badge.style.display = cart.length > 0 ? 'inline-flex' : 'none';
+
+    if (cart.length === 0) {
+      subtitle.textContent = t('cart_empty_subtitle');
+      container.innerHTML = `<p class="empty-state">${t('cart_empty_state')} <a href="catalogo.html" style="color:var(--navy);text-decoration:underline;">${t('go_catalog')}</a></p>`;
+      document.getElementById('summaryCount').textContent = '0';
+      document.getElementById('summaryTotal').textContent = '$0';
+      document.getElementById('confirmBtn').disabled = true;
+      document.querySelector('.schedule-fields').style.display = 'none';
+      return;
+    }
+
+    document.querySelector('.schedule-fields').style.display = 'flex';
+    setupScheduleFields();
+    document.getElementById('confirmBtn').disabled = false;
+    subtitle.textContent = cart.length + ' ' + (cart.length === 1 ? t('day_singular') : t('day_plural'));
+
+    let total = 0;
+    container.innerHTML = cart
+      .map((item) => {
+        const v = vehicles.find((veh) => veh.id === item.vehicleId);
+        if (!v) return '';
+        const subtotal = v.pricePerDay * item.days;
+        total += subtotal;
+        const dayWord = item.days !== 1 ? t('day_unit_plural') : t('day_unit_singular');
+        return `
+          <div class="cart-item">
+            <img src="${v.imageUrl}" alt="${v.brand} ${v.name}" onerror="this.onerror=null;this.src='${placeholderFor(v)}';" />
+            <div>
+              <h3>${v.brand} ${v.name}</h3>
+              <div class="muted-sm">$${v.pricePerDay}${t('per_day')}</div>
+              <div class="stepper" style="margin-top:8px;">
+                <button type="button" onclick="changeItemDays('${v.id}', -1)">−</button>
+                <span>${item.days} ${dayWord}</span>
+                <button type="button" onclick="changeItemDays('${v.id}', 1)">+</button>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div class="price-total" style="font-size:1.15rem;">$${subtotal}</div>
+              <button class="remove-btn" onclick="removeItem('${v.id}')">${t('btn_remove')}</button>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    document.getElementById('summaryCount').textContent = cart.length;
+    document.getElementById('summaryTotal').textContent = '$' + total;
+  }
+
+  function confirmPurchase() {
+    const cart = getCart();
+    if (cart.length === 0) return;
+
+    // Ya no se salta el paso de agendar: fecha y sucursal son obligatorias
+    const pickupDate = document.getElementById('pickupDate').value;
+    const branchId = document.getElementById('pickupBranch').value;
+    if (!pickupDate || !branchId) {
+      alert(t('alert_missing_schedule'));
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (pickupDate < today) {
+      alert(t('alert_date_past'));
+      return;
+    }
+
+    let profile = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+
+    // Si todavía no se ha registrado (no llenó el formulario de inicio),
+    // se le pide su nombre y correo aquí mismo para poder identificar la reserva.
+    if (!profile || !profile.email) {
+      const nombre = prompt(t('prompt_name'));
+      if (!nombre) return;
+      const email = prompt(t('prompt_email'));
+      if (!email) return;
+      profile = { nombre: nombre.trim(), email: email.trim(), telefono: '' };
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    }
+
+    // Registra/actualiza al cliente, agenda el viaje y descuenta stock real
+    registerClient(profile);
+    if (typeof renderAuthNav === 'function') renderAuthNav();
+    const result = processPurchase(profile.email, cart, branchId, pickupDate);
+
+    if (result === null) {
+      alert(t('alert_out_of_stock'));
+      render(); // refresca precios/stock visibles
+      return;
+    }
+
+    saveCart([]); // vacía el carrito
+    alert(t('alert_confirmed_1') + result.total + t('alert_confirmed_2') + profile.nombre + t('alert_confirmed_3'));
+    render();
+  }
+
+  window.onLangChange = render;
+  initLangToggle();
+  render();
+</script>
+
+</body>
+</html>

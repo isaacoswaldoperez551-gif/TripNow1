@@ -1,0 +1,17 @@
+Coloca aquí las fotos reales de cada vehículo con estos nombres exactos
+(el catálogo ya está programado para buscarlas automáticamente):
+
+  hilux.jpg      → Toyota Hilux
+  l200.jpg       → Mitsubishi L200
+  corolla.jpg    → Toyota Corolla
+  model3.jpg     → Tesla Model 3
+  cb190r.jpg     → Honda CB190R
+  cx5.jpg        → Mazda CX-5
+  picanto.jpg    → Kia Picanto
+  kicks.jpg      → Nissan Kicks
+
+Mientras no subas una foto, se muestra automáticamente una imagen de
+marcador de posición con el nombre del vehículo (no se rompe nada).
+
+Formato recomendado: JPG o WEBP, relación 4:3, máx. ~300KB para que
+cargue rápido.

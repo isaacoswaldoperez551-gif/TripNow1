@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sucursales — Trip Now</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+<header class="navbar">
+  <div class="wrap">
+    <a href="index.html" class="logo">trip now</a>
+    <nav class="nav-links">
+      <a href="index.html" data-i18n="nav_inicio">Inicio</a>
+      <a href="catalogo.html" data-i18n="nav_catalogo">Catálogo</a>
+      <a href="sucursales.html" data-i18n="nav_sucursales">Sucursales</a>
+      <a href="index.html#mis-reservas" data-i18n="nav_reservas">Mis reservas</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="carrito.html" class="cart-link">
+        <span data-i18n="cart_link">Carrito</span>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </a>
+      <button class="lang-btn" id="langBtn">ES</button>
+      <span id="navAccount"></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap map-page-header">
+  <h1 data-i18n="branches_title">Nuestras sucursales</h1>
+  <p data-i18n="branches_intro">Retira y devuelve tu vehículo en la ubicación más cercana a ti.</p>
+</div>
+
+<div class="wrap map-layout">
+  <div id="map"></div>
+
+  <div class="branch-list" id="branchList"></div>
+</div>
+
+<footer class="footer">
+  <div class="wrap">
+    <span class="logo">trip now</span>
+    <p class="muted" data-i18n="footer_tagline">Arrendamiento de vehículos · El Salvador</p>
+    <small>© <span id="year"></span> Trip Now. <span data-i18n="footer_rights">Todos los derechos reservados.</span></small>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/data.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+  initLangToggle();
+  (function updateCartBadge() {
+    const badge = document.getElementById('cartBadge');
+    const cart = JSON.parse(localStorage.getItem('tripnow_cart') || '[]');
+    badge.textContent = cart.length;
+    badge.style.display = cart.length > 0 ? 'inline-flex' : 'none';
+  })();
+
+  // Sucursales compartidas vía js/data.js (editable desde el panel de admin)
+  const branches = getBranches();
+
+  const map = L.map('map').setView([13.79, -88.9], 8.2);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18,
+  }).addTo(map);
+
+  const navyIcon = L.divIcon({
+    className: '',
+    html: '<div style="width:16px;height:16px;border-radius:50%;background:#0E1B30;border:3px solid #C6A15B;"></div>',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+
+  const markers = branches.map((b) => {
+    const marker = L.marker([b.lat, b.lng], { icon: navyIcon }).addTo(map);
+    marker.bindPopup(`<strong>${b.name}</strong><br>${b.address}<br>${b.hours}`);
+    return marker;
+  });
+
+  const listEl = document.getElementById('branchList');
+  listEl.innerHTML = branches
+    .map(
+      (b, i) => `
+      <div class="branch-card" data-index="${i}" onclick="focusBranch(${i})">
+        <h3>${b.name}</h3>
+        <p>${b.address}</p>
+        <p class="hours">${b.hours}</p>
+        <p>${b.phone}</p>
+      </div>`
+    )
+    .join('');
+
+  function focusBranch(i) {
+    const b = branches[i];
+    map.setView([b.lat, b.lng], 14);
+    markers[i].openPopup();
+    document.querySelectorAll('.branch-card').forEach((el, idx) =>
+      el.classList.toggle('active', idx === i)
+    );
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Administración — Trip Now</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<header class="navbar">
+  <div class="wrap">
+    <a href="index.html" class="logo">trip now <span style="font-size:0.7rem;font-style:normal;color:var(--gold-dark);">admin</span></a>
+    <nav class="nav-links">
+      <a href="index.html">Ver sitio público</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="btn btn-outline btn-small" id="logoutBtn" style="display:none;" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+</header>
+
+<!-- ---------- LOGIN ---------- -->
+<div class="admin-login-wrap" id="loginView">
+  <div class="admin-login-card">
+    <h1>Acceso administrador</h1>
+    <p>Exclusivo para el dueño y administradores de Trip Now.</p>
+    <form id="loginForm">
+      <input type="text" id="loginUser" placeholder="Usuario" required />
+      <input type="password" id="loginPass" placeholder="Contraseña" required />
+      <p class="admin-error" id="loginError">Usuario o contraseña incorrectos.</p>
+      <button type="submit" class="btn btn-primary">Ingresar</button>
+    </form>
+    <p class="admin-hint">
+      Demo: usuario <strong>admin</strong> / contraseña <strong>admin123</strong>.
+      Esto es solo una simulación en el navegador — un panel real necesita
+      autenticación con backend (contraseñas cifradas, roles y tokens de sesión).
+    </p>
+  </div>
+</div>
+
+<!-- ---------- ADMIN SHELL ---------- -->
+<div class="admin-shell" id="adminView" style="display:none;">
+  <aside class="admin-sidebar">
+    <button class="admin-nav-item active" data-target="dashboard" onclick="showSection('dashboard', this)">Dashboard</button>
+    <button class="admin-nav-item" data-target="clientes" onclick="showSection('clientes', this)">Clientes</button>
+    <button class="admin-nav-item" data-target="viajes" onclick="showSection('viajes', this)">Viajes en proceso</button>
+    <button class="admin-nav-item" data-target="inventario" onclick="showSection('inventario', this)">Inventario (Stock)</button>
+    <button class="admin-nav-item" data-target="sucursales" onclick="showSection('sucursales', this)">Sucursales</button>
+  </aside>
+
+  <div class="admin-content">
+
+    <!-- Dashboard -->
+    <section class="admin-section active" id="dashboard">
+      <h2>Métricas y ganancias</h2>
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="label">Vehículos arrendados (histórico)</div>
+          <div class="value" id="metricRented">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Ingresos generados</div>
+          <div class="value" id="metricRevenue">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Clientes registrados</div>
+          <div class="value" id="metricClients">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Vehículos en flota</div>
+          <div class="value" id="metricFleet">—</div>
+        </div>
+      </div>
+      <p class="admin-hint" style="margin-top:24px;">
+        Estas métricas son datos de ejemplo. En producción se calculan desde
+        la tabla de reservas y pagos reales en la base de datos.
+      </p>
+    </section>
+
+    <!-- Clientes -->
+    <section class="admin-section" id="clientes">
+      <h2>Clientes registrados</h2>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Nombre</th><th>Email</th><th>Reservas</th><th>Gasto total</th><th></th></tr>
+        </thead>
+        <tbody id="clientsTableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- Viajes en proceso -->
+    <section class="admin-section" id="viajes">
+      <h2>Viajes en proceso</h2>
+      <div class="pill-row" id="tripFilterPills" style="margin-bottom:16px;">
+        <button class="pill active" data-status="en_curso" onclick="setTripFilter('en_curso', this)">En curso</button>
+        <button class="pill" data-status="finalizado" onclick="setTripFilter('finalizado', this)">Finalizados</button>
+        <button class="pill" data-status="cancelado" onclick="setTripFilter('cancelado', this)">Cancelados</button>
+        <button class="pill" data-status="todos" onclick="setTripFilter('todos', this)">Todos</button>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Cliente</th><th>Vehículo</th><th>Sucursal</th><th>Recogida</th><th>Devolución</th><th>Total</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody id="tripsTableBody"></tbody>
+      </table>
+      <p class="admin-hint" style="margin-top:16px;" id="tripsEmptyHint" style="display:none;">
+        No hay viajes en esta categoría todavía.
+      </p>
+    </section>
+
+    <!-- Inventario / StockAdmin -->
+    <section class="admin-section" id="inventario">
+      <h2>Control de stock (StockAdmin)</h2>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Vehículo</th><th>Tipo</th><th>Precio/día</th><th>Stock</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody id="stockTableBody"></tbody>
+      </table>
+
+      <form class="admin-form-inline" id="newVehicleForm">
+        <input required id="nvBrand" placeholder="Marca (ej. Toyota)" />
+        <input required id="nvName" placeholder="Modelo (ej. Yaris)" />
+        <select id="nvType">
+          <option>Camioneta</option>
+          <option>Sedán</option>
+          <option>SUV</option>
+          <option>Motocicleta</option>
+          <option>Compacto</option>
+        </select>
+        <select id="nvTransmission">
+          <option>Automático</option>
+          <option>Manual</option>
+        </select>
+        <select id="nvFuel">
+          <option>Gasolina</option>
+          <option>Eléctrico</option>
+          <option>Híbrido</option>
+        </select>
+        <input required type="number" min="1" id="nvPassengers" placeholder="Pasajeros" />
+        <input required type="number" min="1" id="nvPrice" placeholder="Precio/día ($)" />
+        <input required type="number" min="0" id="nvStock" placeholder="Stock inicial" />
+        <button type="submit" class="btn btn-gold">Agregar modelo</button>
+      </form>
+    </section>
+
+    <!-- Sucursales CRUD -->
+    <section class="admin-section" id="sucursales">
+      <h2>Gestión de sucursales</h2>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Nombre</th><th>Dirección</th><th>Horario</th><th>Teléfono</th><th></th></tr>
+        </thead>
+        <tbody id="branchesTableBody"></tbody>
+      </table>
+
+      <form class="admin-form-inline" id="newBranchForm">
+        <input required id="nbName" placeholder="Nombre de sucursal" />
+        <input required id="nbAddress" placeholder="Dirección" />
+        <input required type="number" step="0.0001" id="nbLat" placeholder="Latitud" />
+        <input required type="number" step="0.0001" id="nbLng" placeholder="Longitud" />
+        <input required id="nbHours" placeholder="Horario (ej. Lun–Sáb 8am–6pm)" />
+        <input required id="nbPhone" placeholder="Teléfono" />
+        <button type="submit" class="btn btn-gold">Agregar sucursal</button>
+      </form>
+    </section>
+
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script>
+  const SESSION_KEY = "tripnow_admin_session";
+  const DEMO_USER = "admin";
+  const DEMO_PASS = "admin123";
+
+  function checkSession() {
+    if (sessionStorage.getItem(SESSION_KEY) === "1") {
+      document.getElementById("loginView").style.display = "none";
+      document.getElementById("adminView").style.display = "grid";
+      document.getElementById("logoutBtn").style.display = "inline-block";
+      renderAll();
+    }
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const user = document.getElementById("loginUser").value.trim();
+    const pass = document.getElementById("loginPass").value;
+    if (user === DEMO_USER && pass === DEMO_PASS) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      checkSession();
+    } else {
+      document.getElementById("loginError").style.display = "block";
+    }
+  });
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    location.reload();
+  }
+
+  function showSection(id, btn) {
+    document.querySelectorAll(".admin-section").forEach((s) => s.classList.remove("active"));
+    document.querySelectorAll(".admin-nav-item").forEach((b) => b.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    btn.classList.add("active");
+  }
+
+  /* ---------- Dashboard ---------- */
+  function renderDashboard() {
+    const vehicles = getVehicles();
+    const clients = getClients();
+    const totalRented = clients.reduce((sum, c) => sum + c.reservas, 0);
+    const totalRevenue = clients.reduce((sum, c) => sum + c.gastoTotal, 0);
+
+    document.getElementById("metricRented").textContent = totalRented;
+    document.getElementById("metricRevenue").textContent = "$" + totalRevenue.toLocaleString();
+    document.getElementById("metricClients").textContent = clients.length;
+    document.getElementById("metricFleet").textContent = vehicles.reduce((s, v) => s + v.stock, 0);
+  }
+
+  /* ---------- Clientes ---------- */
+  function renderClients() {
+    const body = document.getElementById("clientsTableBody");
+    body.innerHTML = getClients()
+      .map((c) => `
+        <tr>
+          <td>${c.nombre}</td>
+          <td>${c.email}</td>
+          <td>${c.reservas}</td>
+          <td>$${c.gastoTotal}</td>
+          <td class="admin-actions">
+            <button class="link-btn" onclick="removeClient('${c.id}')">Eliminar</button>
+          </td>
+        </tr>
+      `)
+      .join("");
+  }
+
+  function removeClient(id) {
+    if (!confirm("¿Eliminar este cliente? Esta acción no se puede deshacer.")) return;
+    deleteClient(id);
+    renderClients();
+    renderDashboard();
+  }
+
+  /* ---------- Viajes en proceso ---------- */
+  let tripFilter = "en_curso";
+
+  const TRIP_STATUS_LABEL = {
+    en_curso: "En curso",
+    finalizado: "Finalizado",
+    cancelado: "Cancelado",
+  };
+  const TRIP_STATUS_TAG = {
+    en_curso: "tag-progress",
+    finalizado: "tag-ok",
+    cancelado: "tag-paused",
+  };
+
+  function setTripFilter(status, btn) {
+    tripFilter = status;
+    document.querySelectorAll("#tripFilterPills .pill").forEach((p) => p.classList.remove("active"));
+    btn.classList.add("active");
+    renderTrips();
+  }
+
+  function renderTrips() {
+    const all = getReservations().slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const filtered = tripFilter === "todos" ? all : all.filter((r) => r.status === tripFilter);
+    const body = document.getElementById("tripsTableBody");
+    const emptyHint = document.getElementById("tripsEmptyHint");
+
+    if (filtered.length === 0) {
+      body.innerHTML = "";
+      emptyHint.style.display = "block";
+      return;
+    }
+    emptyHint.style.display = "none";
+
+    body.innerHTML = filtered
+      .map(
+        (r) => `
+        <tr>
+          <td>${r.clientName || "—"}<br><span class="muted-sm">${r.clientEmail || ""}</span></td>
+          <td>${r.vehicleName}</td>
+          <td>${r.branchName}</td>
+          <td>${r.pickupDate}</td>
+          <td>${r.returnDate}</td>
+          <td>$${r.total}${r.extraFees ? `<br><span class="muted-sm">(incl. $${r.extraFees} en cambios)</span>` : ""}</td>
+          <td><span class="tag ${TRIP_STATUS_TAG[r.status]}">${TRIP_STATUS_LABEL[r.status]}</span></td>
+          <td class="admin-actions">
+            ${
+              r.status === "en_curso"
+                ? `<button class="link-btn" onclick="finalizeTrip('${r.id}')">Finalizar</button>
+                   <button class="link-btn" onclick="cancelTrip('${r.id}')">Cancelar</button>`
+                : ""
+            }
+          </td>
+        </tr>
+      `
+      )
+      .join("");
+  }
+
+  function finalizeTrip(id) {
+    if (!confirm("¿Marcar este viaje como finalizado? El vehículo volverá a estar disponible en el stock.")) return;
+    setReservationStatus(id, "finalizado");
+    renderTrips();
+    renderStock();
+    renderDashboard();
+  }
+
+  function cancelTrip(id) {
+    if (!confirm("¿Cancelar esta reserva? El vehículo volverá a estar disponible en el stock.")) return;
+    setReservationStatus(id, "cancelado");
+    renderTrips();
+    renderStock();
+    renderDashboard();
+  }
+
+  /* ---------- Inventario / Stock ---------- */
+  function renderStock() {
+    const vehicles = getVehicles();
+    const body = document.getElementById("stockTableBody");
+    body.innerHTML = vehicles
+      .map(
+        (v) => `
+        <tr>
+          <td>${v.brand} ${v.name}</td>
+          <td>${v.type}</td>
+          <td>$${v.pricePerDay}</td>
+          <td>
+            <div class="stock-controls">
+              <button onclick="changeStock('${v.id}', -1)">−</button>
+              <span>${v.stock}</span>
+              <button onclick="changeStock('${v.id}', 1)">+</button>
+            </div>
+          </td>
+          <td>
+            <span class="tag ${v.paused ? "tag-paused" : "tag-ok"}">
+              ${v.paused ? "En mantenimiento" : "Activo"}
+            </span>
+          </td>
+          <td class="admin-actions">
+            <button class="link-btn" onclick="togglePause('${v.id}')">${v.paused ? "Reactivar" : "Pausar"}</button>
+            <button class="link-btn" onclick="deleteVehicle('${v.id}')">Eliminar</button>
+          </td>
+        </tr>
+      `
+      )
+      .join("");
+  }
+
+  function changeStock(id, delta) {
+    const vehicles = getVehicles();
+    const v = vehicles.find((veh) => veh.id === id);
+    if (v) v.stock = Math.max(0, v.stock + delta);
+    saveVehicles(vehicles);
+    renderStock();
+    renderDashboard();
+  }
+
+  function togglePause(id) {
+    const vehicles = getVehicles();
+    const v = vehicles.find((veh) => veh.id === id);
+    if (v) v.paused = !v.paused;
+    saveVehicles(vehicles);
+    renderStock();
+  }
+
+  function deleteVehicle(id) {
+    if (!confirm("¿Eliminar este modelo del catálogo?")) return;
+    const vehicles = getVehicles().filter((v) => v.id !== id);
+    saveVehicles(vehicles);
+    renderStock();
+    renderDashboard();
+  }
+
+  document.getElementById("newVehicleForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const vehicles = getVehicles();
+    const id = "v" + (Date.now());
+    vehicles.push({
+      id,
+      brand: document.getElementById("nvBrand").value.trim(),
+      name: document.getElementById("nvName").value.trim(),
+      type: document.getElementById("nvType").value,
+      transmission: document.getElementById("nvTransmission").value,
+      fuel: document.getElementById("nvFuel").value,
+      passengers: Number(document.getElementById("nvPassengers").value),
+      pricePerDay: Number(document.getElementById("nvPrice").value),
+      stock: Number(document.getElementById("nvStock").value),
+      paused: false,
+      imageUrl: "images/vehicles/placeholder.jpg",
+    });
+    saveVehicles(vehicles);
+    e.target.reset();
+    renderStock();
+    renderDashboard();
+  });
+
+  /* ---------- Sucursales CRUD ---------- */
+  function renderBranches() {
+    const branches = getBranches();
+    const body = document.getElementById("branchesTableBody");
+    body.innerHTML = branches
+      .map(
+        (b) => `
+        <tr>
+          <td>${b.name}</td>
+          <td>${b.address}</td>
+          <td>${b.hours}</td>
+          <td>${b.phone}</td>
+          <td class="admin-actions">
+            <button class="link-btn" onclick="deleteBranch('${b.id}')">Eliminar</button>
+          </td>
+        </tr>
+      `
+      )
+      .join("");
+  }
+
+  function deleteBranch(id) {
+    if (!confirm("¿Dar de baja esta sucursal?")) return;
+    const branches = getBranches().filter((b) => b.id !== id);
+    saveBranches(branches);
+    renderBranches();
+  }
+
+  document.getElementById("newBranchForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const branches = getBranches();
+    branches.push({
+      id: "b" + Date.now(),
+      name: document.getElementById("nbName").value.trim(),
+      address: document.getElementById("nbAddress").value.trim(),
+      lat: Number(document.getElementById("nbLat").value),
+      lng: Number(document.getElementById("nbLng").value),
+      hours: document.getElementById("nbHours").value.trim(),
+      phone: document.getElementById("nbPhone").value.trim(),
+    });
+    saveBranches(branches);
+    e.target.reset();
+    renderBranches();
+  });
+
+  function renderAll() {
+    renderDashboard();
+    renderClients();
+    renderTrips();
+    renderStock();
+    renderBranches();
+  }
+
+  checkSession();
+</script>
+
+</body>
+</html>

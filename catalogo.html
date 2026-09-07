@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Catálogo — Trip Now</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<header class="navbar">
+  <div class="wrap">
+    <a href="index.html" class="logo">trip now</a>
+    <nav class="nav-links">
+      <a href="index.html" data-i18n="nav_inicio">Inicio</a>
+      <a href="catalogo.html" data-i18n="nav_catalogo">Catálogo</a>
+      <a href="sucursales.html" data-i18n="nav_sucursales">Sucursales</a>
+      <a href="index.html#mis-reservas" data-i18n="nav_reservas">Mis reservas</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="carrito.html" class="cart-link">
+        <span data-i18n="cart_link">Carrito</span>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </a>
+      <button class="lang-btn" id="langBtn">ES</button>
+      <span id="navAccount"></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap catalog-header">
+  <h1 data-i18n="catalog_title">Catálogo de arrendamiento</h1>
+  <p id="resultCount" data-i18n="catalog_loading">Cargando vehículos disponibles…</p>
+</div>
+
+<div class="filter-bar">
+  <div class="wrap">
+    <div class="pill-row" id="typePills">
+      <button class="pill active" data-i18n="pill_all" onclick="setTypeFilter('Todos', this)">Todos</button>
+      <button class="pill" data-i18n="pill_pickup" onclick="setTypeFilter('Camioneta', this)">Camioneta</button>
+      <button class="pill" data-i18n="pill_sedan" onclick="setTypeFilter('Sedán', this)">Sedán</button>
+      <button class="pill" data-i18n="pill_suv" onclick="setTypeFilter('SUV', this)">SUV</button>
+      <button class="pill" data-i18n="pill_moto" onclick="setTypeFilter('Motocicleta', this)">Motocicleta</button>
+      <button class="pill" data-i18n="pill_compact" onclick="setTypeFilter('Compacto', this)">Compacto</button>
+    </div>
+
+    <div class="select-row">
+      <label>
+        <span data-i18n="label_transmission">Transmisión</span>
+        <select id="transmissionSelect">
+          <option value="Todos" data-i18n="opt_all">Todos</option>
+          <option value="Automático" data-i18n="opt_auto">Automático</option>
+          <option value="Manual" data-i18n="opt_manual">Manual</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="label_fuel">Combustible</span>
+        <select id="fuelSelect">
+          <option value="Todos" data-i18n="opt_all">Todos</option>
+          <option value="Gasolina" data-i18n="opt_gas">Gasolina</option>
+          <option value="Eléctrico" data-i18n="opt_electric">Eléctrico</option>
+          <option value="Híbrido" data-i18n="opt_hybrid">Híbrido</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="label_min_passengers">Pasajeros mín.</span>
+        <select id="passengersSelect">
+          <option value="1">1+</option>
+          <option value="2">2+</option>
+          <option value="4">4+</option>
+          <option value="5">5+</option>
+          <option value="7">7+</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="catalog-grid" id="catalogGrid"></div>
+</div>
+
+<footer class="footer">
+  <div class="wrap">
+    <span class="logo">trip now</span>
+    <p class="muted" data-i18n="footer_tagline">Arrendamiento de vehículos · El Salvador</p>
+    <small>© <span id="year"></span> Trip Now. <span data-i18n="footer_rights">Todos los derechos reservados.</span></small>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+<script src="js/data.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/catalogo.js"></script>
+
+</body>
+</html>
